@@ -290,7 +290,24 @@ def render_road_map(result: dict, roads: gpd.GeoDataFrame | None = None) -> None
         center={"lat": center.y, "lon": center.x},
         height=550,
     )
-    fig.update_layout(margin={"l": 0, "r": 0, "t": 10, "b": 0}, showlegend=False, font={"color": "#ffffff"})
+    # Desenha o contorno municipal completo, incluindo zonas urbanas e rurais.
+    boundary = get_city_polygon(result["city"]).geometry.iloc[0]
+    polygons = [boundary] if boundary.geom_type == "Polygon" else list(boundary.geoms)
+    boundary_lats: list[float | None] = []
+    boundary_lons: list[float | None] = []
+    for polygon in polygons:
+        coords = list(polygon.exterior.coords)
+        boundary_lons.extend([point[0] for point in coords] + [None])
+        boundary_lats.extend([point[1] for point in coords] + [None])
+    fig.add_trace(go.Scattermap(
+        lon=boundary_lons,
+        lat=boundary_lats,
+        mode="lines",
+        line={"color": "#f5c542", "width": 4},
+        name=f"Limite municipal de {result['city']}",
+        hoverinfo="name",
+    ))
+    fig.update_layout(margin={"l": 0, "r": 0, "t": 10, "b": 0}, showlegend=True, legend_title_text="Mapa", font={"color": "#ffffff"}, legend={"font": {"color": "#ffffff"}, "title_font": {"color": "#ffffff"}, "bgcolor": "rgba(12, 24, 27, 0.82)"})
     st.plotly_chart(fig, width="stretch")
 
 
