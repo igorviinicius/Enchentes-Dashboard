@@ -1,4 +1,4 @@
-"""Dashboard acadêmico sobre vias potencialmente atingidas pela cheia de 2024."""
+"""Dashboard acadêmico sobre vias p atingidas pela enchente de 2024."""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ import plotly.graph_objects as go
 import pyogrio
 import requests
 import streamlit as st
-
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "dados" / "originais"
@@ -57,7 +56,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 px.defaults.template = "plotly_white"
-
 
 st.markdown(
     """
@@ -257,18 +255,19 @@ def calculate_city(city: str, flood_path: str, roads_path: str | None) -> dict:
         "flood_layer": flood_layer,
     }
 
-
 def render_road_map(result: dict, roads: gpd.GeoDataFrame | None = None) -> None:
     roads = roads if roads is not None else result["roads"]
     affected = roads[roads["km_afetados"] > 0]
-    unaffected = roads[roads["km_afetados"] <= 0]
-    if len(unaffected) > 1800:
-        unaffected = unaffected.sample(1800, random_state=42)
-    shown = pd.concat([unaffected, affected])
+    if affected.empty:
+        st.info("Não há trechos desta seleção dentro da mancha de inundação.")
+        return
+    st.caption("O mapa mostra somente os trechos dentro da mancha; vias fora dela não são desenhadas.")
+    shown = affected
     lats: list[float | None] = []
     lons: list[float | None] = []
     statuses: list[str] = []
     road_types: list[str] = []
+
     for row in shown.itertuples():
         geometry = row.geometry
         lines = [geometry] if geometry.geom_type == "LineString" else list(geometry.geoms) if geometry.geom_type == "MultiLineString" else []
@@ -286,12 +285,12 @@ def render_road_map(result: dict, roads: gpd.GeoDataFrame | None = None) -> None
         lon="lon",
         color="Situação",
         hover_name="Classe da via",
-        color_discrete_map={"Dentro da mancha": "#dc5c51", "Fora da mancha": "#88a2a6"},
+        color_discrete_map={"Dentro da mancha": "#dc5c51"},
         zoom=10,
         center={"lat": center.y, "lon": center.x},
         height=550,
     )
-    fig.update_layout(margin={"l": 0, "r": 0, "t": 10, "b": 0}, legend_title_text="Exposição", font={"color": "#ffffff"}, legend={"font": {"color": "#ffffff"}, "title_font": {"color": "#ffffff"}, "bgcolor": "rgba(12, 24, 27, 0.82)"})
+    fig.update_layout(margin={"l": 0, "r": 0, "t": 10, "b": 0}, showlegend=False, font={"color": "#ffffff"})
     st.plotly_chart(fig, width="stretch")
 
 
