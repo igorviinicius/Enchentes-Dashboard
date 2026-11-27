@@ -1,0 +1,8 @@
+streamlit>=1.40
+pandas>=2.2
+plotly>=5.24
+geopandas>=1.0
+osmnx>=2.0
+pyogrio>=0.10
+requests>=2.32
+beautifulsoup4>=4.12
